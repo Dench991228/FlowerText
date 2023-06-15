@@ -60,9 +60,7 @@ def get_evaluation_fn(model: torch.nn.Module, loader: DataLoader):
         acc = count_correct * 1.0 / count_total
         logging.info(f"round {server_round}: Test acc is {acc}")
         # 保存模型
-        if acc > best_acc:
-            best_acc = acc
-            torch.save(model.state_dict(), f"{args.backbone}{'_f' if args.fix else ''}.ckpt")
+        torch.save(model.state_dict(), f"{args.backbone}{'_f' if args.fix else ''}.ckpt")
         return total_loss, {"accuracy": count_correct * 1.0 / count_total}
 
     return evaluate
@@ -78,6 +76,7 @@ t_loader, e_loader, s_loader, count_train, count_eval = load_data(client_idx=arg
 strategy = fl.server.strategy.FedAvg(
     evaluate_fn=get_evaluation_fn(f_model, s_loader),
     evaluate_metrics_aggregation_fn=weighted_average,
+    min_fit_clients=3
 )
 
 # Start Flower server
