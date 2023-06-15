@@ -26,7 +26,7 @@ class BertClassification(nn.Module):
         if self.fix:
             with torch.no_grad():
                 encoded = self.backbone(tokenized)[0][:, 0, :]
-                logits = self.mlp_network(encoded)
+            logits = self.mlp_network(encoded)
         else:
             encoded = self.backbone(tokenized)[0][:, 0, :]
             logits = self.network(encoded)
