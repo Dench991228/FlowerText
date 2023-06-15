@@ -7,6 +7,7 @@ import flwr as fl
 import torch.nn
 from flwr.common import Metrics
 from flwr.common.typing import Parameters
+from flwr.common import logger
 import logging
 from options import args, f_model, DEVICE
 
@@ -40,7 +41,7 @@ def get_evaluation_fn(model: torch.nn.Module, loader: DataLoader):
         params_dict = zip(model.state_dict().keys(), parameters)
         state_dict = OrderedDict({k: torch.tensor(v) for k, v in params_dict})
         ms, un = model.load_state_dict(state_dict, strict=True)
-        logging.info(f"{ms}, unexpected: {un}")
+        logger.logger.info(f"{ms}, unexpected: {un}")
         criterion = torch.nn.CrossEntropyLoss()
         count_correct = 0
         count_total = 0
@@ -59,7 +60,7 @@ def get_evaluation_fn(model: torch.nn.Module, loader: DataLoader):
                 count_total += total
                 total_loss += loss * 1.0 / len(loader)
         acc = count_correct * 1.0 / count_total
-        logging.info(f"round {server_round}: Test acc is {acc}")
+        logger.logger.info(f"round {server_round}: Test acc is {acc}")
         # 保存模型
         torch.save(model.state_dict(), f"{args.backbone}{'_f' if args.fix else ''}.ckpt")
         return total_loss, {"accuracy": count_correct * 1.0 / count_total}

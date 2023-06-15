@@ -1,4 +1,6 @@
 import logging
+
+from flwr.common import logger
 import warnings
 from collections import OrderedDict
 
@@ -18,7 +20,7 @@ from options import args, DEVICE, f_model
 # #############################################################################
 
 warnings.filterwarnings("ignore", category=UserWarning)
-logging.basicConfig(filename=f"client{args.client_id}.logfile", format='%(asctime)s %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p')
+logger.logger.setLevel(logging.INFO)
 
 
 # Define Flower client
@@ -38,14 +40,16 @@ class FlowerClient(fl.client.NumPyClient):
 
     def fit(self, parameters, config):
         self.set_parameters(parameters)
-        logging.info("start training")
+        logger.logger.info("start training")
         train(self.model, self.train_loader, epochs=1)
+        loss, accuracy = test(self.model, self.test_loader)
+        logger.logger.info(f"evaluate result on local data and local model: acc {accuracy}")
         return self.get_parameters(config={}), len(self.train_loader.dataset), {}
 
     def evaluate(self, parameters, config):
         self.set_parameters(parameters)
         loss, accuracy = test(self.model, self.test_loader)
-        logging.info(f"evaluate result on local data: acc {accuracy}")
+        logger.logger.info(f"evaluate result on local data: acc {accuracy}")
         return loss, len(self.test_loader.dataset), {"accuracy": accuracy}
 
 
@@ -79,7 +83,7 @@ def test(net, testloader: DataLoader):
 t_loader, e_loader, s_loader, count_train, count_eval = load_data(client_idx=args.client_id,
                                                                   data_file=args.data_path,
                                                                   partition_file=args.partition_path,
-                                                                  batch_size=16,
+                                                                  batch_size=4,
                                                                   tokenizer_name=args.backbone)
 
 # Start Flower client
