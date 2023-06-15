@@ -6,6 +6,7 @@ from torch.utils.data import DataLoader
 import flwr as fl
 import torch.nn
 from flwr.common import Metrics
+from flwr.common.typing import Parameters
 import logging
 from options import args, f_model, DEVICE
 
@@ -69,9 +70,13 @@ t_loader, e_loader, s_loader, count_train, count_eval = load_data(client_idx=arg
                                                                   tokenizer_name=args.backbone)
 
 # Define strategy
-strategy = fl.server.strategy.FedAvg(
+strategy = fl.server.strategy.FedAdam(
     evaluate_fn=get_evaluation_fn(f_model, s_loader),
-    evaluate_metrics_aggregation_fn=weighted_average)
+    evaluate_metrics_aggregation_fn=weighted_average,
+    initial_parameters=Parameters([val.cpu().numpy() for _, val in f_model.state_dict().items()], tensor_type="float"),
+    tau=0.1,
+    eta_l=1e-3
+)
 
 # Start Flower server
 fl.server.start_server(
