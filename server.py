@@ -33,6 +33,7 @@ def get_evaluation_fn(model: torch.nn.Module, loader: DataLoader):
     # 初始化测试用的模型
     # 最终返回的函数
     best_acc = 0.0
+
     def evaluate(
             server_round: int,
             parameters: fl.common.NDArrays,
@@ -79,18 +80,19 @@ if args.strategy == "avg":
     strategy = fl.server.strategy.FedAvg(
         evaluate_fn=get_evaluation_fn(f_model, s_loader),
         evaluate_metrics_aggregation_fn=weighted_average,
-        min_fit_clients=3,
-        min_available_clients=3,
-        min_evaluate_clients=3
+        min_fit_clients=args.count_client,
+        min_available_clients=args.count_client,
+        min_evaluate_clients=args.count_client
     )
 else:
     strategy = fl.server.strategy.FedAdam(
         evaluate_fn=get_evaluation_fn(f_model, s_loader),
         evaluate_metrics_aggregation_fn=weighted_average,
-        min_fit_clients=3,
-        min_available_clients=3,
-        min_evaluate_clients=3,
-        initial_parameters=fl.common.ndarrays_to_parameters([val.cpu().numpy() for _, val in f_model.state_dict().items()]),
+        min_fit_clients=args.count_client,
+        min_available_clients=args.count_client,
+        min_evaluate_clients=args.count_client,
+        initial_parameters=fl.common.ndarrays_to_parameters(
+            [val.cpu().numpy() for _, val in f_model.state_dict().items()]),
         tau=0.1,
         eta_l=1e-1,
         eta=1
