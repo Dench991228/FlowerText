@@ -39,7 +39,8 @@ def get_evaluation_fn(model: torch.nn.Module, loader: DataLoader):
     ) -> Optional[Tuple[float, Dict[str, fl.common.Scalar]]]:
         params_dict = zip(model.state_dict().keys(), parameters)
         state_dict = OrderedDict({k: torch.tensor(v) for k, v in params_dict})
-        model.load_state_dict(state_dict, strict=True)
+        ms, un = model.load_state_dict(state_dict, strict=True)
+        logging.info(f"{ms}, unexpected: {un}")
         criterion = torch.nn.CrossEntropyLoss()
         count_correct = 0
         count_total = 0
@@ -78,7 +79,8 @@ if args.strategy == "avg":
         evaluate_fn=get_evaluation_fn(f_model, s_loader),
         evaluate_metrics_aggregation_fn=weighted_average,
         min_fit_clients=3,
-        min_available_clients=3
+        min_available_clients=3,
+        min_evaluate_clients=3
     )
 else:
     strategy = fl.server.strategy.FedAdam(
@@ -86,6 +88,7 @@ else:
         evaluate_metrics_aggregation_fn=weighted_average,
         min_fit_clients=3,
         min_available_clients=3,
+        min_evaluate_clients=3,
         initial_parameters=fl.common.ndarrays_to_parameters([val.cpu().numpy() for _, val in f_model.state_dict().items()]),
         tau=0.1,
         eta_l=1e-1,
