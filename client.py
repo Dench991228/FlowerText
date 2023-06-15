@@ -21,6 +21,8 @@ from options import args, DEVICE, f_model
 
 warnings.filterwarnings("ignore", category=UserWarning)
 logger.logger.setLevel(logging.INFO)
+logging.basicConfig(filename=f"client{args.client_id}.logfile", format='%(asctime)s %(message)s',
+                    datefmt='%m/%d/%Y %I:%M:%S %p')
 
 
 # Define Flower client
@@ -60,8 +62,15 @@ def train(net, trainloader: DataLoader, epochs):
     for _ in range(epochs):
         for token_ids, labels in tqdm(trainloader):
             optimizer.zero_grad()
-            criterion(net(token_ids.to(DEVICE)), labels.to(DEVICE)).backward()
+            logits = net(token_ids.to(DEVICE))
+            criterion(logits, labels.to(DEVICE)).backward()
             optimizer.step()
+            pred = torch.argmax(logits, dim=-1)
+            correct = (pred == labels)
+            correct = torch.sum(correct.float()).item()
+            total = labels.shape[0]
+            logger.logger.info(pred)
+            logger.logger.info(correct*1.0/total)
 
 
 def test(net, testloader: DataLoader):
