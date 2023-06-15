@@ -71,6 +71,7 @@ def train(net, trainloader: DataLoader, epochs):
             total = labels.shape[0]
             logger.logger.info(pred)
             logger.logger.info(correct*1.0/total)
+            logger.logger.info(labels)
 
 
 def test(net, testloader: DataLoader):
