@@ -13,6 +13,7 @@ parser.add_argument("--backbone", type=str, default="bert-base-uncased",
 parser.add_argument("--fix", action="store_true")
 parser.add_argument("--prompt", action="store_true")
 parser.add_argument("--round", type=int, default=5)
+parser.add_argument("--strategy", type=str, default="avg")
 args = parser.parse_args()
 # 获得模型的维度
 encoder_dim = 768 if args.backbone == "bert-base-uncased" else 1024
