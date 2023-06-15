@@ -45,7 +45,7 @@ class FlowerClient(fl.client.NumPyClient):
     def evaluate(self, parameters, config):
         self.set_parameters(parameters)
         loss, accuracy = test(self.model, self.test_loader)
-        logging.log(f"evaluate result on local data: acc {accuracy}")
+        logging.info(f"evaluate result on local data: acc {accuracy}")
         return loss, len(self.test_loader.dataset), {"accuracy": accuracy}
 
 
@@ -70,7 +70,7 @@ def test(net, testloader: DataLoader):
             outputs = net(token_ids.to(DEVICE))
             labels = labels.to(DEVICE)
             loss += criterion(outputs, labels).item()
-            correct += (torch.max(outputs.data, 1)[1] == labels).sum().item()
+            correct += (torch.argmax(outputs, dim=-1) == labels).float().sum().item()
     accuracy = correct / len(testloader.dataset)
     return loss, accuracy
 

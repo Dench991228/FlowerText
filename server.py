@@ -56,6 +56,7 @@ def get_evaluation_fn(model: torch.nn.Module, loader: DataLoader):
                 total_loss += loss * 1.0 / len(loader)
         logging.info(f"round {server_round}: Test acc is {count_correct * 1.0 / count_total}")
         # 保存模型
+        torch.save(model.state_dict(), f"{args.backbone}{'_f' if args.fix else ''}.ckpt")
         return total_loss, {"accuracy": count_correct * 1.0 / count_total}
 
     return evaluate
@@ -75,7 +76,7 @@ strategy = fl.server.strategy.FedAvg(
 # Start Flower server
 fl.server.start_server(
     server_address="0.0.0.0:8080",
-    config=fl.server.ServerConfig(num_rounds=1),
+    config=fl.server.ServerConfig(num_rounds=args.rounds),
     strategy=strategy,
     grpc_max_message_length=1024 * 1024 * 1024
 )
