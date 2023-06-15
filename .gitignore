@@ -1,0 +1,4 @@
+*.h5
+*.logfile
+.idea
+__pycache__/

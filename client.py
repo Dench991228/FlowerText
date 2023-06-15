@@ -1,3 +1,4 @@
+import logging
 import warnings
 from collections import OrderedDict
 
@@ -10,22 +11,14 @@ from loader import load_data
 import argparse
 from model import BertClassification
 from torch.utils.data import DataLoader
+from options import args, DEVICE, f_model
 
 # #############################################################################
 # 1. Regular PyTorch pipeline: nn.Module, train, test, and DataLoader
 # #############################################################################
 
 warnings.filterwarnings("ignore", category=UserWarning)
-DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-parser = argparse.ArgumentParser()
-parser.add_argument("--data-path", type=str, help="数据文件存放的位置", default="agnews_data.h5")
-parser.add_argument("--partition-path", type=str, help="分割文件存放的位置", default="partition.h5")
-parser.add_argument("--client-id", type=int, help="当前客户端的编号", required=True)
-parser.add_argument("--backbone", type=str, default="bert-base-uncased",
-                    choices=["bert-base-uncased", "bert-large-uncased"])
-parser.add_argument("--fix", action="store_true")
-parser.add_argument("--prompt", action="store_true")
-args = parser.parse_args()
+logging.basicConfig(filename=f"client{args.client_id}.logfile", format='%(asctime)s %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p')
 
 
 # Define Flower client
@@ -36,21 +29,23 @@ class FlowerClient(fl.client.NumPyClient):
         self.test_loader = test_loader
 
     def get_parameters(self, config):
-        return [val for _, val in self.model.state_dict().items()]
+        return [val.cpu().numpy() for _, val in self.model.state_dict().items()]
 
     def set_parameters(self, parameters):
         params_dict = zip(self.model.state_dict().keys(), parameters)
         state_dict = OrderedDict({k: torch.tensor(v) for k, v in params_dict})
-        self.model.load_state_dict(state_dict, strict=True)
+        self.model.load_state_dict(state_dict, strict=False)
 
     def fit(self, parameters, config):
         self.set_parameters(parameters)
+        logging.info("start training")
         train(self.model, self.train_loader, epochs=1)
         return self.get_parameters(config={}), len(self.train_loader.dataset), {}
 
     def evaluate(self, parameters, config):
         self.set_parameters(parameters)
         loss, accuracy = test(self.model, self.test_loader)
+        logging.log(f"evaluate result on local data: acc {accuracy}")
         return loss, len(self.test_loader.dataset), {"accuracy": accuracy}
 
 
@@ -80,20 +75,16 @@ def test(net, testloader: DataLoader):
     return loss, accuracy
 
 
-# 获得模型的维度
-encoder_dim = 768 if args.backbone == "bert-base-uncased" else 1024
-# 模型初始化
-f_model = BertClassification(input_dim=encoder_dim, count_class=4, device=DEVICE, fix=args.fix, backbone=args.backbone)
-# 家在数据
-t_loader, e_loader, count_train, count_eval = load_data(client_idx=args.client_id,
-                                                        data_file=args.data_path,
-                                                        partition_file=args.partition_path,
-                                                        batch_size=16,
-                                                        tokenizer_name=args.backbone)
+# 加载数据
+t_loader, e_loader, s_loader, count_train, count_eval = load_data(client_idx=args.client_id,
+                                                                  data_file=args.data_path,
+                                                                  partition_file=args.partition_path,
+                                                                  batch_size=16,
+                                                                  tokenizer_name=args.backbone)
 
 # Start Flower client
 fl.client.start_numpy_client(
     server_address="127.0.0.1:8080",
     client=FlowerClient(model=f_model, train_loader=t_loader, test_loader=e_loader),
-    grpc_max_message_length=1024*1024*1024
+    grpc_max_message_length=1024 * 1024 * 1024
 )
