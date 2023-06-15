@@ -58,7 +58,11 @@ class FlowerClient(fl.client.NumPyClient):
 def train(net, trainloader: DataLoader, epochs):
     """Train the model on the training set."""
     criterion = torch.nn.CrossEntropyLoss()
-    optimizer = torch.optim.AdamW(net.parameters(), lr=0.001, betas=(0.99, 0.999))
+    optimizer = torch.optim.AdamW(params=[{
+        "params": [p for n, p in net.named_parameters()],
+        "weight_decay": 1e-2,
+        "lr": 2e-5
+    }])
     for _ in range(epochs):
         for token_ids, labels in tqdm(trainloader):
             optimizer.zero_grad()
@@ -70,7 +74,7 @@ def train(net, trainloader: DataLoader, epochs):
             correct = torch.sum(correct.float()).item()
             total = labels.shape[0]
             logger.logger.info(pred)
-            logger.logger.info(correct*1.0/total)
+            logger.logger.info(correct * 1.0 / total)
             logger.logger.info(labels)
 
 
