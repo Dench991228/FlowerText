@@ -71,9 +71,13 @@ t_loader, e_loader, s_loader, count_train, count_eval = load_data(client_idx=arg
                                                                   tokenizer_name=args.backbone)
 
 # Define strategy
-strategy = fl.server.strategy.FedAvg(
+strategy = fl.server.strategy.FedAdam(
     evaluate_fn=get_evaluation_fn(f_model, s_loader),
     evaluate_metrics_aggregation_fn=weighted_average,
+    initial_parameters=fl.common.ndarrays_to_parameters([val.cpu().numpy() for _, val in f_model.state_dict().items()]),
+    tau=0.1,
+    eta_l=1e-1,
+    eta=1
 )
 
 # Start Flower server
