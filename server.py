@@ -31,6 +31,7 @@ def get_evaluation_fn(model: torch.nn.Module, loader: DataLoader):
     # 准备测试用的数据集
     # 初始化测试用的模型
     # 最终返回的函数
+    best_acc = 0.0
     def evaluate(
             server_round: int,
             parameters: fl.common.NDArrays,
@@ -56,9 +57,12 @@ def get_evaluation_fn(model: torch.nn.Module, loader: DataLoader):
                 count_correct += correct
                 count_total += total
                 total_loss += loss * 1.0 / len(loader)
-        logging.info(f"round {server_round}: Test acc is {count_correct * 1.0 / count_total}")
+        acc = count_correct * 1.0 / count_total
+        logging.info(f"round {server_round}: Test acc is {acc}")
         # 保存模型
-        torch.save(model.state_dict(), f"{args.backbone}{'_f' if args.fix else ''}.ckpt")
+        if acc > best_acc:
+            best_acc = acc
+            torch.save(model.state_dict(), f"{args.backbone}{'_f' if args.fix else ''}.ckpt")
         return total_loss, {"accuracy": count_correct * 1.0 / count_total}
 
     return evaluate
@@ -71,13 +75,9 @@ t_loader, e_loader, s_loader, count_train, count_eval = load_data(client_idx=arg
                                                                   tokenizer_name=args.backbone)
 
 # Define strategy
-strategy = fl.server.strategy.FedAdam(
+strategy = fl.server.strategy.FedAvg(
     evaluate_fn=get_evaluation_fn(f_model, s_loader),
     evaluate_metrics_aggregation_fn=weighted_average,
-    initial_parameters=fl.common.ndarrays_to_parameters([val.cpu().numpy() for _, val in f_model.state_dict().items()]),
-    tau=0.1,
-    eta_l=1e-1,
-    eta=1
 )
 
 # Start Flower server
