@@ -63,5 +63,5 @@ class BertClassification(nn.Module):
             result = []
             for key in key_list:
                 if key.find("network") != -1 or key.find("prompt") != -1:
-                    result.append(result)
+                    result.append(key)
             return result
