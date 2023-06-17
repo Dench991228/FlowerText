@@ -49,7 +49,10 @@ class BertClassification(nn.Module):
         tokenized = batch
         # (bsz, L, dim)
         encoded = self.backbone(tokenized)[0][:, 0, :]
-        logits = self.network(encoded)
+        if self.fix:
+            logits = self.network(encoded)
+        else:
+            logits = self.mlp_network(encoded)
         return logits
 
     def get_parameter_keys(self):
