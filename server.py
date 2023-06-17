@@ -41,7 +41,7 @@ def get_evaluation_fn(model: torch.nn.Module, loader: DataLoader):
     ) -> Optional[Tuple[float, Dict[str, fl.common.Scalar]]]:
         params_dict = zip(model.get_parameter_keys(), parameters)
         state_dict = OrderedDict({k: torch.tensor(v) for k, v in params_dict})
-        ms, un = model.load_state_dict(state_dict, strict=True)
+        ms, un = model.load_state_dict(state_dict, strict=False)
         logger.logger.info(f"{ms}, unexpected: {un}")
         criterion = torch.nn.CrossEntropyLoss()
         count_correct = 0
