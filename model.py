@@ -51,3 +51,17 @@ class BertClassification(nn.Module):
         encoded = self.backbone(tokenized)[0][:, 0, :]
         logits = self.network(encoded)
         return logits
+
+    def get_parameter_keys(self):
+        """
+        获取全部的需要被计算的参数
+        """
+        if not self.fix:
+            return self.state_dict().keys()
+        else:
+            key_list = self.state_dict().keys()
+            result = []
+            for key in key_list:
+                if key.find("network") != -1 or key.find("prompt") != -1:
+                    result.append(result)
+            return result

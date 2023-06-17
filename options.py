@@ -20,4 +20,4 @@ args = parser.parse_args()
 encoder_dim = 768 if args.backbone == "bert-base-uncased" else 1024
 # 模型初始化
 DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-f_model = BertClassification(input_dim=encoder_dim, count_class=4, device=DEVICE, fix=args.fix, backbone=args.backbone)
+f_model = BertClassification(input_dim=encoder_dim, count_class=4, device=DEVICE, fix=args.fix, backbone=args.backbone, prompt=args.prompt)

@@ -33,12 +33,14 @@ class FlowerClient(fl.client.NumPyClient):
         self.test_loader = test_loader
 
     def get_parameters(self, config):
-        return [val.cpu().numpy() for _, val in self.model.state_dict().items()]
+        p_list = self.model.get_parameter_keys()
+        return [self.model.state_dict()[key].cpu().numpy() for key in p_list]
 
     def set_parameters(self, parameters):
-        params_dict = zip(self.model.state_dict().keys(), parameters)
+        params_dict = zip(self.model.get_parameter_keys(), parameters)
         state_dict = OrderedDict({k: torch.tensor(v) for k, v in params_dict})
-        self.model.load_state_dict(state_dict, strict=False)
+        ms, un = self.model.load_state_dict(state_dict, strict=False)
+        logger.logger.info(f"missing keys: {ms}, unexpected: {un}")
 
     def fit(self, parameters, config):
         self.set_parameters(parameters)

@@ -39,7 +39,7 @@ def get_evaluation_fn(model: torch.nn.Module, loader: DataLoader):
             parameters: fl.common.NDArrays,
             config: Dict[str, fl.common.Scalar],
     ) -> Optional[Tuple[float, Dict[str, fl.common.Scalar]]]:
-        params_dict = zip(model.state_dict().keys(), parameters)
+        params_dict = zip(model.get_parameter_keys(), parameters)
         state_dict = OrderedDict({k: torch.tensor(v) for k, v in params_dict})
         ms, un = model.load_state_dict(state_dict, strict=True)
         logger.logger.info(f"{ms}, unexpected: {un}")
