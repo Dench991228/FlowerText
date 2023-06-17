@@ -36,7 +36,7 @@ class BertClassification(nn.Module):
         if fix:
             for name, param in list(self.backbone.named_parameters()):
                 param.required_grad = False
-        self.prompt_module = PromptModule(input_dim, self.backbone.embeddings, device)
+        self.prompt_module = PromptModule(input_dim, embed=self.backbone.embeddings, device=device)
         if prompt:
             self.backbone.set_input_embeddings = self.prompt_module
         self.device = device
